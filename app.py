@@ -1,6 +1,6 @@
 from flask import Flask, render_template, request, redirect, url_for, flash
 import sqlite3
-
+from flask import send_file
 app = Flask(__name__)
 app.secret_key = "supersecretkey123"
 
@@ -154,6 +154,11 @@ def delete_guest(guest_id):
     conn.commit()
     conn.close()
     return redirect(url_for("index"))
+
+
+@app.route("/download-db")
+def download_db():
+    return send_file("guests.db", as_attachment=True)
 
 
 if __name__ == "__main__":
