@@ -1,0 +1,337 @@
+<!DOCTYPE html>
+<html lang="ar">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" 
+      content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>بوابة الضيوف - الأعراس</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Cairo:wght@200..1000&display=swap');
+  :root{
+    --gold:#cfa04a;         /* ذهبي دافئ */
+    --gold-soft:#e8c57b;    /* ذهبي فاتح */
+    --ink:#0d0d0f;          /* أسود مائل للفحم */
+    --veil:#fff9ec;         /* عاجي دافئ */
+    --paper:rgba(255,255,255,0.12);
+  }
+    body::before{
+    content:"";
+    position:fixed; inset:0;
+    background-image:
+      repeating-linear-gradient(90deg,
+        rgba(255,255,255,0.06) 0px,
+        rgba(255,255,255,0.06) 1px,
+        rgba(0,0,0,0.04) 1px,
+        rgba(0,0,0,0.04) 18px);
+    mix-blend-mode:soft-light;
+    pointer-events:none;
+  }
+body {
+    margin: 0;
+    padding: 5px;
+    font-family: 'Tajawal', 'Cairo', sans-serif;
+    text-align: center;
+    direction: rtl;
+    background-color: white;
+	/*background: url("{{ url_for('static', filename='images/pic.png') }}") no-repeat center center fixed;*/
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 100vh;  /* full height */
+    flex-direction: column;
+}
+
+h1, h2, h3 {
+    color: #5f564d;
+    font-weight: 300;
+    margin-bottom: 15px;
+}
+
+form {
+    text-align: right;
+    max-width: 500px;
+    width: 95%;
+    background: transparent;
+    padding: none;
+    display: flex;
+    flex-direction: column;
+    border-radius: 10px;
+    margin-bottom: 40px;
+}
+
+label {
+    margin-top: 15px;
+    font-weight: 650;
+    font-size:0.9rem;
+    color: #1e0c0194;
+}
+
+.button {
+       background: url("{{ url_for('static', filename='images/pic.png') }}") no-repeat center center;
+    color: #ffffff;
+    border: none;
+  font-size:0.9rem;
+    margin-top: 25px;
+    border-radius: 6px;
+    cursor: pointer;
+	   font-family: 'Tajawal', 'Cairo', sans-serif;
+}
+.subButton {
+      
+    color:black;
+    border: none;
+  font-size:0.8rem;
+    margin-top: 25px;
+    border-radius: 6px;
+    cursor: pointer;
+	   font-family: 'Tajawal', 'Cairo', sans-serif;
+}
+
+input, select {
+      background: transparent;
+    border: none;
+    border: 1px solid #06010029;
+    padding: 8px 5px;
+    margin-top: 5px;
+    font-size:0.9rem;
+    border-radius: 10px;
+    color: #342a27;
+    outline: none;
+}
+}
+
+table {
+    width: 90%;
+    max-width: 700px;
+    border-collapse: collapse;
+    margin-top: 30px;
+    background: WHITE;
+    border-radius: 10px;
+    overflow: hidden;
+       border-radius: 10px;
+    text-align: center;
+}
+
+th, td {
+    padding: 12px;
+       border: 1px solid #0000001f;
+    font-size: 0.95rem;
+    font-weight: 300;
+}
+
+th {
+    background-color:#3d3d3d ;
+    color: #f5f5f5;
+    font-weight: 400;
+}
+
+tr:hover {
+    background-color: #f5f5f5;
+}
+
+.sublables{
+  ;
+    width: fit-content;
+    padding: 2px;
+	align-self: anchor-center;
+    border-radius: 5px;
+}
+
+</style>
+</head>
+<body>
+    <img src="../static/images/pic.png" alt="Wedding Picture" width="400">
+
+    <form method="post">
+	    <input type="hidden" name="form_type" value="guest_form">
+
+        <label>نوع الدعوة:</label>
+        <select name="is_group" required>
+            <option value="0">فردي</option>
+            <option value="1">مجموعة / عائلة</option>
+        </select>
+
+        <label>الاسم / اسم المجموعة:</label>
+        <input type="text" name="name" required>
+
+        <label>عدد الأشخاص (إذا كانت مجموعة):</label>
+        <input type="number" name="group_size" min="1" value="1">
+ <label>درجة القرب:</label>
+        <select name="closeness">
+            <option value="1">قريب جدا</option>
+            <option value="2">صديق مقرب</option>
+            <option value="3">زميل عمل</option>
+            <option value="4">معارف</option>
+        </select>
+		
+		 
+
+        <input class="button" type="submit" value="إضافة الضيف">
+		
+		
+
+
+
+    </form>
+	
+{% with messages = get_flashed_messages(with_categories=true) %}
+  {% if messages %}
+    {% for category, msg in messages %}
+      <div style="color: green; font-weight: bold;"class="alert {{ category }}">{{ msg }}</div>
+    {% endfor %}
+  {% endif %}
+{% endwith %}
+
+<form method="post">
+  <input type="hidden" name="form_type" value="closs_form">
+
+  <div id="customFields"
+       style="margin-top:10px; align-items: stretch;
+              flex-direction: column; justify-content: center; 
+              {% if request.form.get('agree') %}display:none;{% else %}display:flex;{% endif %}">
+    {% set closeness_types = {1:"قريب جدا", 2:"صديق مقرب", 3:"زميل عمل", 4:"معارف"} %}
+    {% for i in range(1,5) %}
+      <label class='sublables'>{{ closeness_types[i] }}</label>
+      
+      <select name="clos{{i}}_select" id="clos{{i}}_select">
+        <option value="">اختر عبارة جاهزة</option>
+        {% for option in predefined_options[i] %}
+          <option value="{{ option }}" {% if option == closeness['clos' ~ i] %}selected{% endif %}>
+            {{ option }}
+          </option>
+        {% endfor %}
+      </select>
+
+      <input type="text"
+             id="clos{{i}}_input"
+             name="clos{{i}}_input"
+             placeholder="{{ closeness['clos' ~ i] }}"
+             value="">
+    {% endfor %}
+  </div>
+
+  <input class="button" type="submit" value="حفظ العباره الترحيبيه">
+</form>
+
+<script>
+(function(){
+  // اربط كل select/input مع بعض بحيث واحد منهم فقط يرسل قيمة
+  for (var i = 1; i <= 4; i++) {
+    var sel = document.getElementById('clos' + i + '_select');
+    var inp = document.getElementById('clos' + i + '_input');
+    if (!sel || !inp) continue;
+
+    sel.addEventListener('change', function(e){
+      var idx = this.id.match(/^clos(\d+)_select$/)[1];
+      var input = document.getElementById('clos' + idx + '_input');
+      if (this.value) input.value = ''; // إذا اختار من القائمة، نفرّغ الـ input
+    });
+
+    inp.addEventListener('input', function(e){
+      var idx = this.id.match(/^clos(\d+)_input$/)[1];
+      var select = document.getElementById('clos' + idx + '_select');
+      if (this.value.trim() !== '') select.value = ''; // إذا كتب نص، نصفر اختيار القائمة
+    });
+  }
+})();
+</script>
+
+
+
+{% if guests %}
+  
+{% set total_count = guests|length %}
+<h3>قائمة الضيوف: {{total_count}} </h3>
+  {# نجهّز عناوين التابز من جدول closeness (النصوص قابلة للتغيير من النموذج العلوي) #}
+  {% set tabs = [
+    ('1', closeness.get('clos1','قريب جدا')),
+    ('2', closeness.get('clos2','صديق مقرب')),
+    ('3', closeness.get('clos3','زميل عمل')),
+    ('4', closeness.get('clos4','معارف'))
+  ] %}
+
+  <!-- شريط التابز -->
+  {% set relation_types = {1:"قريب جدا", 2:"صديق مقرب", 3:"زميل عمل", 4:"معارف"} %}
+
+<div class="tabs" style="display:flex;gap:0px;justify-content:center;flex-wrap:wrap;margin-top:10px">
+  {% for tid, label in tabs %}
+    <button type="button"
+            class="tab-btn"
+            data-phrase="{{ label|e }}"  
+            onclick="filterByPhrase(this.dataset.phrase, this)"
+            style=" font-family: 'Tajawal', 'Cairo', sans-serif;background:#3d3d3d;color:#fff;border:none;border-radius:0px;padding:8px 14px;cursor:pointer">
+      {{ relation_types[tid|int] }}       <!-- اسم العلاقة الثابت للعرض -->
+    </button>
+  {% endfor %}
+</div>
+
+
+  <!-- جدول واحد؛ الصفوف تحمل data-phrase = نص درجة القرب -->
+  <table>
+    <tr>
+      <th>الاسم / المجموعة</th>
+      <th>عدد الأشخاص</th>
+      <th>العباره الترحيبيه</th>
+      <th>حذف</th>
+    </tr>
+
+    {% for guest in guests %}
+      <!-- guest[4] = نص درجة القرب من JOIN -->
+      <tr data-phrase="{{ guest[4]|e }}">
+        <td>{{ guest[1] }}</td>
+        <td>{{ guest[3] if guest[2] == 1 else 1 }}</td>
+        <td>{{ guest[4] }}</td>
+        <td>
+          <a href="{{ url_for('delete_guest', guest_id=guest[0]) }}">
+            <button class="subButton" type="button">حذف</button>
+          </a>
+        </td>
+      </tr>
+    {% endfor %}
+  </table>
+
+  <script>
+    (function () {
+      function setActive(btn) {
+        document.querySelectorAll('.tab-btn').forEach(function (b) {
+          b.style.background = '#3d3d3d';
+          b.style.color = '#fff';
+        });
+        if (btn) {
+          b = btn;
+          b.style.background = 'var(--gold)';
+          b.style.color = '#000';
+        }
+      }
+
+      window.filterByPhrase = function (phrase, btn) {
+        var rows = document.querySelectorAll('table tr[data-phrase]');
+        var target = String(phrase || '').trim();
+        rows.forEach(function (r) {
+          var val = String(r.dataset.phrase || '').trim();
+          r.style.display = (val === target) ? '' : 'none';
+        });
+        setActive(btn);
+      };
+
+      // فعل أول تبويب تلقائياً
+      var firstBtn = document.querySelector('.tab-btn');
+      if (firstBtn) {
+        filterByPhrase(firstBtn.dataset.phrase, firstBtn);
+      }
+    })();
+  </script>
+{% endif %}
+
+
+<script>
+function showTab(tabId) {
+  document.querySelectorAll('.table-container').forEach(div => div.classList.remove('active'));
+  document.querySelectorAll('.tab-button').forEach(btn => btn.classList.remove('active'));
+  document.getElementById(tabId).classList.add('active');
+  event.target.classList.add('active');
+}
+</script>
+
+</body>
+</html>
