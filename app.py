@@ -20,6 +20,7 @@ def init_db():
     conn = get_conn()
     cursor = conn.cursor()
 
+    # closeness table
     cursor.execute("""
         CREATE TABLE IF NOT EXISTS closeness (
             id SERIAL PRIMARY KEY,
@@ -33,20 +34,32 @@ def init_db():
         (3, "زميل عمل"),
         (4, "معارف")
     ]
-    for id, phrase in default_phrases:
+    for id_, phrase in default_phrases:
         cursor.execute(
             "INSERT INTO closeness (id, phrase) VALUES (%s, %s) ON CONFLICT (id) DO NOTHING",
-            (id, phrase)
+            (id_, phrase)
         )
 
+    # sequence backing the hashed id
+    cursor.execute("""
+        CREATE SEQUENCE IF NOT EXISTS public.guests_id_seq START 1 INCREMENT 1
+    """)
+
+    # guests table with TEXT hashed id (md5 of sequence value)
     cursor.execute("""
         CREATE TABLE IF NOT EXISTS guests (
-            id SERIAL PRIMARY KEY,
-            name TEXT,
-            is_group INTEGER DEFAULT 0,
+            id         TEXT PRIMARY KEY
+                       DEFAULT md5(nextval('public.guests_id_seq'::regclass)::text),
+            name       TEXT,
+            is_group   INTEGER DEFAULT 0,
             group_size INTEGER DEFAULT 1,
-            closs_id INTEGER NOT NULL REFERENCES closeness(id)
+            closs_id   INTEGER NOT NULL REFERENCES closeness(id)
         )
+    """)
+
+    # ensure lifecycle link (optional)
+    cursor.execute("""
+        ALTER SEQUENCE public.guests_id_seq OWNED BY guests.id
     """)
 
     conn.commit()
@@ -75,6 +88,7 @@ def index():
                 group_size = int(request.form.get("group_size", 1)) if is_group else 1
                 closs_id = int(request.form.get("closeness", 4))
 
+                # id will be auto-generated as md5(nextval(...))
                 cursor.execute(
                     "INSERT INTO guests (name, is_group, group_size, closs_id) VALUES (%s, %s, %s, %s)",
                     (name, is_group, group_size, closs_id)
@@ -97,14 +111,15 @@ def index():
             return redirect(url_for("index"))
 
     cursor.execute("""
-        SELECT g.id, g.name, g.is_group, g.group_size, c.phrase 
+        SELECT g.id, g.name, g.is_group, g.group_size, c.phrase
         FROM guests g
         JOIN closeness c ON g.closs_id = c.id
+        ORDER BY g.name NULLS LAST
     """)
     guests = cursor.fetchall()
 
     cursor.execute("SELECT id, phrase FROM closeness ORDER BY id")
-    closeness = {f"clos{id}": phrase for id, phrase in cursor.fetchall()}
+    closeness = {f"clos{id_}": phrase for id_, phrase in cursor.fetchall()}
 
     predefined_options = {
         1: ["يا مرحبا رحب والقلب من اقصاه", "اغلى من يجي", "يا مرحبا يا اعز من يستاهل الترحيبه",
@@ -128,7 +143,8 @@ def index():
     )
 
 
-@app.route("/delete/<int:guest_id>")
+# Delete by hashed TEXT id
+@app.route("/delete/<guest_id>")
 def delete_guest(guest_id):
     conn = get_conn()
     cursor = conn.cursor()
@@ -138,22 +154,23 @@ def delete_guest(guest_id):
     return redirect(url_for("index"))
 
 
-# 🔹 تحميل البيانات كـ CSV
+# 🔹 Download data as CSV
 @app.route("/download-db")
 def download_db():
     conn = get_conn()
     cursor = conn.cursor()
     cursor.execute("""
-        SELECT g.id, g.name, g.is_group, g.group_size, c.phrase 
+        SELECT g.id, g.name, g.is_group, g.group_size, c.phrase
         FROM guests g
         JOIN closeness c ON g.closs_id = c.id
+        ORDER BY g.name NULLS LAST
     """)
     rows = cursor.fetchall()
     conn.close()
 
     output = io.StringIO()
     writer = csv.writer(output)
-    writer.writerow(["ID", "Name", "Is Group", "Group Size", "Closeness"])
+    writer.writerow(["ID (hash)", "Name", "Is Group", "Group Size", "Closeness"])
     writer.writerows(rows)
 
     response = Response(output.getvalue(), mimetype="text/csv")
@@ -162,4 +179,5 @@ def download_db():
 
 
 if __name__ == "__main__":
+    # host/port as you had them
     app.run(host="0.0.0.0", port=5000, debug=True)
