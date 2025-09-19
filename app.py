@@ -1,11 +1,12 @@
-from flask import Flask, render_template, request, redirect, url_for, flash, send_file
+from flask import Flask, render_template, request, redirect, url_for, flash, send_file, Response
 import psycopg2
 import os
+import csv
+import io
 
 app = Flask(__name__)
 app.secret_key = "supersecretkey123"
 
-# 🔹 ناخذ رابط قاعدة البيانات من متغير البيئة (Render يعطيك إياه)
 DB_URL = os.getenv("DATABASE_URL")
 
 
@@ -19,7 +20,6 @@ def init_db():
     conn = get_conn()
     cursor = conn.cursor()
 
-    # Create closeness table
     cursor.execute("""
         CREATE TABLE IF NOT EXISTS closeness (
             id SERIAL PRIMARY KEY,
@@ -27,7 +27,6 @@ def init_db():
         )
     """)
 
-    # Insert default phrases if not exist
     default_phrases = [
         (1, "قريب جدا"),
         (2, "صديق مقرب"),
@@ -40,7 +39,6 @@ def init_db():
             (id, phrase)
         )
 
-    # Create guests table
     cursor.execute("""
         CREATE TABLE IF NOT EXISTS guests (
             id SERIAL PRIMARY KEY,
@@ -68,7 +66,6 @@ def index():
     if request.method == "POST":
         form_type = request.form.get("form_type", "")
 
-        # Guest form
         if form_type == "guest_form":
             name = request.form.get("name", "").strip()
             if not name:
@@ -76,7 +73,7 @@ def index():
             else:
                 is_group = int(request.form.get("is_group", 0))
                 group_size = int(request.form.get("group_size", 1)) if is_group else 1
-                closs_id = int(request.form.get("closeness", 4))  # default 4
+                closs_id = int(request.form.get("closeness", 4))
 
                 cursor.execute(
                     "INSERT INTO guests (name, is_group, group_size, closs_id) VALUES (%s, %s, %s, %s)",
@@ -87,7 +84,6 @@ def index():
                 flash("✅ تم إضافة الضيف بنجاح!")
                 return redirect(url_for("index"))
 
-        # Closeness form
         elif form_type == "closs_form":
             for i in range(1, 5):
                 phrase_input = request.form.get(f"clos{i}_input", "").strip()
@@ -100,7 +96,6 @@ def index():
             flash("✅ تم حفظ العبارات المخصصة بنجاح!")
             return redirect(url_for("index"))
 
-    # Fetch guests
     cursor.execute("""
         SELECT g.id, g.name, g.is_group, g.group_size, c.phrase 
         FROM guests g
@@ -108,38 +103,19 @@ def index():
     """)
     guests = cursor.fetchall()
 
-    # Fetch closeness phrases
     cursor.execute("SELECT id, phrase FROM closeness ORDER BY id")
     closeness = {f"clos{id}": phrase for id, phrase in cursor.fetchall()}
 
-    # Predefined options for each closeness type
     predefined_options = {
-        1: [
-            "يا مرحبا رحب والقلب من اقصاه",
-            "اغلى من يجي",
-            "يا مرحبا يا اعز من يستاهل الترحيبه",
+        1: ["يا مرحبا رحب والقلب من اقصاه", "اغلى من يجي", "يا مرحبا يا اعز من يستاهل الترحيبه",
             "يامرحبا ماهيب مرة ولا عشرين مرة يامرحبا لين ينقطع صوتنا ويبتدي ترحيب عينا",
-            "يامرحبا ترحيب يكتب بالانــوار يامرحبـا باللي يـشـرف حظـوره"
-        ],
-        2: [
-            "اتسع صدر المكان وزاد فيكي رحابه",
-            "يا هلا ومرحبا ترحيب ماله نظير",
-            "ياقديم المودَّه مرحبـاً بـك",
-            "مرحبا باللي لها القلب خفاق، بنت تساوي في عيوني ملايين",
-            "أقبلي من صوب قلبي سلم اللّٰه هالخطاوي  كل دربٍ في حضورك لا مشيتي تشرفينه"
-        ],
-        3: [
-            "تزينت ليلتنا بوجودك",
-            "شرفتنا ونورتنا",
-            "أهلا زميلتي",
-            "سعداء بحضورك"
-        ],
-        4: [
-            "تزينت ليلتنا بوجودك",
-            "سعدنا بحضوركم وزادت فرحتنا بقدومكم",
-            "مرحبا يا أجمل تفاصيل الليال ومرحبابك",
-            "شرفتنا ونورتنا"
-        ]
+            "يامرحبا ترحيب يكتب بالانــوار يامرحبـا باللي يـشـرف حظـوره"],
+        2: ["اتسع صدر المكان وزاد فيكي رحابه", "يا هلا ومرحبا ترحيب ماله نظير",
+            "ياقديم المودَّه مرحبـاً بـك", "مرحبا باللي لها القلب خفاق، بنت تساوي في عيوني ملايين",
+            "أقبلي من صوب قلبي سلم اللّٰه هالخطاوي  كل دربٍ في حضورك لا مشيتي تشرفينه"],
+        3: ["تزينت ليلتنا بوجودك", "شرفتنا ونورتنا", "أهلا زميلتي", "سعداء بحضورك"],
+        4: ["تزينت ليلتنا بوجودك", "سعدنا بحضوركم وزادت فرحتنا بقدومكم", "مرحبا يا أجمل تفاصيل الليال ومرحبابك",
+            "شرفتنا ونورتنا"]
     }
 
     conn.close()
@@ -162,11 +138,27 @@ def delete_guest(guest_id):
     return redirect(url_for("index"))
 
 
-# ⚠️ ما نقدر نسوي download-db الآن لأن PostgreSQL مش ملف، 
-# ممكن نبدله بــ export CSV لاحقاً
+# 🔹 تحميل البيانات كـ CSV
 @app.route("/download-db")
 def download_db():
-    return "❌ Database is remote (PostgreSQL), not downloadable as file."
+    conn = get_conn()
+    cursor = conn.cursor()
+    cursor.execute("""
+        SELECT g.id, g.name, g.is_group, g.group_size, c.phrase 
+        FROM guests g
+        JOIN closeness c ON g.closs_id = c.id
+    """)
+    rows = cursor.fetchall()
+    conn.close()
+
+    output = io.StringIO()
+    writer = csv.writer(output)
+    writer.writerow(["ID", "Name", "Is Group", "Group Size", "Closeness"])
+    writer.writerows(rows)
+
+    response = Response(output.getvalue(), mimetype="text/csv")
+    response.headers["Content-Disposition"] = "attachment; filename=guests.csv"
+    return response
 
 
 if __name__ == "__main__":
