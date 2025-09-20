@@ -9,6 +9,9 @@ from reportlab.platypus import Table, TableStyle
 from reportlab.lib import colors
 from reportlab.pdfbase import pdfmetrics
 from reportlab.pdfbase.ttfonts import TTFont
+import arabic_reshaper
+from bidi.algorithm import get_display
+
 app = Flask(__name__)
 app.secret_key = "supersecretkey123"
 
