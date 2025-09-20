@@ -3,7 +3,10 @@ import psycopg2
 import os
 import csv
 import io
-
+from reportlab.lib.pagesizes import A4
+from reportlab.pdfgen import canvas
+from reportlab.platypus import Table, TableStyle
+from reportlab.lib import colors
 app = Flask(__name__)
 app.secret_key = "supersecretkey123"
 
