@@ -155,7 +155,7 @@ def delete_guest(guest_id):
 
 
 # 🔹 Download data as CSV
-@app.route("/download-db")
+@app.route("/c")
 def download_db():
     conn = get_conn()
     cursor = conn.cursor()
@@ -189,6 +189,86 @@ ORDER BY g.name NULLS LAST;
     response.headers["Content-Disposition"] = "attachment; filename=guests.csv"
     return response
 
+@app.route("/followup_pdf")
+def followup_pdf():
+    conn = get_conn()
+    cursor = conn.cursor()
+
+    cursor.execute("""
+        SELECT g.name, g.is_group, c.phrase
+        FROM guests g
+        JOIN closeness c ON g.closs_id = c.id
+        ORDER BY c.id, g.is_group, g.name
+    """)
+    rows = cursor.fetchall()
+    conn.close()
+
+    # ترتيب البيانات
+    grouped = {}
+    for name, is_group, closeness in rows:
+        if closeness not in grouped:
+            grouped[closeness] = {"individuals": [], "groups": []}
+        if is_group == 1:
+            grouped[closeness]["groups"].append(name)
+        else:
+            grouped[closeness]["individuals"].append(name)
+
+    buffer = io.BytesIO()
+    pdf = canvas.Canvas(buffer, pagesize=A4)
+    width, height = A4
+
+    y = height - 50
+    pdf.setFont("Helvetica-Bold", 16)
+    pdf.drawString(200, y, "قائمة المتابعة")
+    y -= 40
+
+    for closeness, data in grouped.items():
+        pdf.setFont("Helvetica-Bold", 14)
+        pdf.drawString(50, y, closeness)
+        y -= 25
+
+        # الأفراد
+        pdf.setFont("Helvetica-Bold", 12)
+        pdf.drawString(70, y, "الأفراد")
+        y -= 20
+        table_data = [["الاسم", "تمت الدعوة"]]
+        for name in data["individuals"]:
+            table_data.append([name, " "])
+        if len(table_data) > 1:
+            table = Table(table_data, colWidths=[200, 100])
+            table.setStyle(TableStyle([
+                ("BACKGROUND", (0, 0), (-1, 0), colors.lightgrey),
+                ("GRID", (0, 0), (-1, -1), 1, colors.black),
+            ]))
+            table.wrapOn(pdf, width, height)
+            table.drawOn(pdf, 70, y - 20 * len(table_data))
+            y -= 20 * (len(table_data) + 2)
+
+        # المجموعات
+        pdf.setFont("Helvetica-Bold", 12)
+        pdf.drawString(70, y, "المجموعات")
+        y -= 20
+        table_data = [["الاسم", "تمت الدعوة"]]
+        for name in data["groups"]:
+            table_data.append([name, " "])
+        if len(table_data) > 1:
+            table = Table(table_data, colWidths=[200, 100])
+            table.setStyle(TableStyle([
+                ("BACKGROUND", (0, 0), (-1, 0), colors.lightgrey),
+                ("GRID", (0, 0), (-1, -1), 1, colors.black),
+            ]))
+            table.wrapOn(pdf, width, height)
+            table.drawOn(pdf, 70, y - 20 * len(table_data))
+            y -= 20 * (len(table_data) + 2)
+
+        y -= 30
+        if y < 100:
+            pdf.showPage()
+            y = height - 50
+
+    pdf.save()
+    buffer.seek(0)
+    return send_file(buffer, as_attachment=True, download_name="followup.pdf", mimetype="application/pdf")
 
 if __name__ == "__main__":
     # host/port as you had them
