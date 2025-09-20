@@ -160,17 +160,30 @@ def download_db():
     conn = get_conn()
     cursor = conn.cursor()
     cursor.execute("""
-        SELECT g.id, g.name, g.is_group, g.group_size, c.phrase
-        FROM guests g
-        JOIN closeness c ON g.closs_id = c.id
-        ORDER BY g.name NULLS LAST
+      SELECT 
+    g.id,
+    g.name,
+    g.is_group,
+    g.group_size,
+    c.phrase,
+    g.closs_id,
+    CASE 
+        WHEN g.closs_id = 1 THEN 'قريب جدا'
+        WHEN g.closs_id = 2 THEN 'صديق مقرب'
+        WHEN g.closs_id = 3 THEN 'زميل عمل'
+        WHEN g.closs_id = 4 THEN 'معارف'
+    END AS type
+FROM guests g
+JOIN closeness c ON g.closs_id = c.id
+ORDER BY g.name NULLS LAST;
+
     """)
     rows = cursor.fetchall()
     conn.close()
 
     output = io.StringIO()
     writer = csv.writer(output)
-    writer.writerow(["ID (hash)", "Name", "Is Group", "Group Size", "Closeness"])
+    writer.writerow(["ID (hash)", "Name", "Is Group", "Group Size", "Closeness","closs"])
     writer.writerows(rows)
 
     response = Response(output.getvalue(), mimetype="text/csv")
