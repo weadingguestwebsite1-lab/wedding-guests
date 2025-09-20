@@ -77,7 +77,7 @@ def init_db():
 
 init_db()
 # تسجيل خط عربي
-pdfmetrics.registerFont(TTFont("Arabic", "static/fonts/DGAgnadeen-Regular.ttf"))
+pdfmetrics.registerFont(TTFont("Arabic", "static/fonts/Monadi.ttf"))
 
 # دالة لتجهيز النص العربي
 def prepare_ar_text(text):
@@ -261,13 +261,13 @@ def followup_pdf():
         pdf.drawRightString(520, y, prepare_ar_text("الأفراد"))
         y -= 20
         table_data = [[
-            Paragraph(prepare_ar_text("الاسم"), arabic_style),
-            Paragraph(prepare_ar_text("تمت الدعوة"), arabic_style)
+            Paragraph(prepare_ar_text("تمت الدعوة"), arabic_style),
+            Paragraph(prepare_ar_text("الاسم"), arabic_style)
         ]]
         for name in data["individuals"]:
             table_data.append([
-                Paragraph(prepare_ar_text(name), arabic_style),
-                Paragraph(" ", arabic_style)
+                 Paragraph(prepare_ar_text("تمت الدعوة"), arabic_style),
+            Paragraph(prepare_ar_text("الاسم"), arabic_style)
             ])
         if len(table_data) > 1:
             table = Table(table_data, colWidths=[200, 100])
@@ -290,8 +290,9 @@ def followup_pdf():
         ]]
         for name in data["groups"]:
             table_data.append([
-                Paragraph(prepare_ar_text(name), arabic_style),
-                Paragraph(" ", arabic_style)
+              
+                Paragraph(" ", arabic_style),
+                  Paragraph(prepare_ar_text(name), arabic_style)
             ])
         if len(table_data) > 1:
             table = Table(table_data, colWidths=[200, 100])
