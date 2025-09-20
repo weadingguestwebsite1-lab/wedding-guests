@@ -5,12 +5,13 @@ import csv
 import io
 from reportlab.lib.pagesizes import A4
 from reportlab.pdfgen import canvas
-from reportlab.platypus import Table, TableStyle
 from reportlab.lib import colors
 from reportlab.pdfbase import pdfmetrics
 from reportlab.pdfbase.ttfonts import TTFont
 import arabic_reshaper
 from bidi.algorithm import get_display
+from reportlab.platypus import Table, TableStyle, Paragraph
+from reportlab.lib.styles import ParagraphStyle
 
 app = Flask(__name__)
 app.secret_key = "supersecretkey123"
@@ -210,7 +211,7 @@ def followup_pdf():
     cursor = conn.cursor()
 
     cursor.execute("""
-        SELECT g.name, g.is_group,    CASE 
+        SELECT g.name, g.is_group, CASE 
         WHEN g.closs_id = 1 THEN 'قريب جدا'
         WHEN g.closs_id = 2 THEN 'صديق مقرب'
         WHEN g.closs_id = 3 THEN 'زميل عمل'
@@ -237,23 +238,37 @@ def followup_pdf():
     pdf = canvas.Canvas(buffer, pagesize=A4)
     width, height = A4
 
+    # ستايل عربي للجداول
+    arabic_style = ParagraphStyle(
+        name="ArabicStyle",
+        fontName="Arabic",
+        fontSize=12,
+        alignment=2  # 2 = محاذاة يمين
+    )
+
     y = height - 50
     pdf.setFont("Arabic", 16)
-    pdf.drawString(200, y, prepare_ar_text("قائمة المتابعة"))
+    pdf.drawRightString(550, y, prepare_ar_text("قائمة المتابعة"))
     y -= 40
 
     for closeness, data in grouped.items():
         pdf.setFont("Arabic", 16)
-        pdf.drawString(50, y, prepare_ar_text(closeness))
+        pdf.drawRightString(550, y, prepare_ar_text(closeness))
         y -= 25
 
         # الأفراد
         pdf.setFont("Arabic", 12)
-        pdf.drawString(70, y, prepare_ar_text("الأفراد"))
+        pdf.drawRightString(520, y, prepare_ar_text("الأفراد"))
         y -= 20
-        table_data = [["الاسم", "تمت الدعوة"]]
+        table_data = [[
+            Paragraph(prepare_ar_text("الاسم"), arabic_style),
+            Paragraph(prepare_ar_text("تمت الدعوة"), arabic_style)
+        ]]
         for name in data["individuals"]:
-            table_data.append([name, " "])
+            table_data.append([
+                Paragraph(prepare_ar_text(name), arabic_style),
+                Paragraph(" ", arabic_style)
+            ])
         if len(table_data) > 1:
             table = Table(table_data, colWidths=[200, 100])
             table.setStyle(TableStyle([
@@ -261,16 +276,22 @@ def followup_pdf():
                 ("GRID", (0, 0), (-1, -1), 1, colors.black),
             ]))
             table.wrapOn(pdf, width, height)
-            table.drawOn(pdf, 70, y - 20 * len(table_data))
+            table.drawOn(pdf, 250, y - 20 * len(table_data))
             y -= 20 * (len(table_data) + 2)
 
         # المجموعات
         pdf.setFont("Arabic", 12)
-        pdf.drawString(70, y, prepare_ar_text("المجموعات"))
+        pdf.drawRightString(520, y, prepare_ar_text("المجموعات"))
         y -= 20
-        table_data = [["الاسم", "تمت الدعوة"]]
+        table_data = [[
+            Paragraph(prepare_ar_text("الاسم"), arabic_style),
+            Paragraph(prepare_ar_text("تمت الدعوة"), arabic_style)
+        ]]
         for name in data["groups"]:
-            table_data.append([name, " "])
+            table_data.append([
+                Paragraph(prepare_ar_text(name), arabic_style),
+                Paragraph(" ", arabic_style)
+            ])
         if len(table_data) > 1:
             table = Table(table_data, colWidths=[200, 100])
             table.setStyle(TableStyle([
@@ -278,7 +299,7 @@ def followup_pdf():
                 ("GRID", (0, 0), (-1, -1), 1, colors.black),
             ]))
             table.wrapOn(pdf, width, height)
-            table.drawOn(pdf, 70, y - 20 * len(table_data))
+            table.drawOn(pdf, 250, y - 20 * len(table_data))
             y -= 20 * (len(table_data) + 2)
 
         y -= 30
