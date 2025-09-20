@@ -266,8 +266,8 @@ def followup_pdf():
         ]]
         for name in data["individuals"]:
             table_data.append([
-                 Paragraph(prepare_ar_text("تمت الدعوة"), arabic_style),
-            Paragraph(prepare_ar_text("الاسم"), arabic_style)
+                Paragraph(" ", arabic_style),
+                  Paragraph(prepare_ar_text(name), arabic_style)
             ])
         if len(table_data) > 1:
             table = Table(table_data, colWidths=[200, 100])
