@@ -200,7 +200,7 @@ tr:hover {
     {% set closeness_types = {1:"قريب جدا", 2:"صديق مقرب", 3:"زميل عمل", 4:"معارف"} %}
     {% for i in range(1,5) %}
       <label class='sublables'>{{ closeness_types[i] }}</label>
-        <label class='sublables'>:اختاري عباره جاهزه</label>
+        <label class='sublabless'>اختاري عباره جاهزه:</label>
       <select name="clos{{i}}_select" id="clos{{i}}_select">
         <option value="">اختر عبارة جاهزة</option>
         {% for option in predefined_options[i] %}
@@ -209,7 +209,7 @@ tr:hover {
           </option>
         {% endfor %}
       </select>
-     <label class='sublabless'>:او اكتبي عباره الترحيب بنفسك</label>
+     <label class='sublabless'>او اكتبي عباره الترحيب بنفسك:</label>
       <input type="text"
              id="clos{{i}}_input"
              name="clos{{i}}_input"
