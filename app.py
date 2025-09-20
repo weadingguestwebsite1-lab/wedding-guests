@@ -210,7 +210,12 @@ def followup_pdf():
     cursor = conn.cursor()
 
     cursor.execute("""
-        SELECT g.name, g.is_group, c.phrase
+        SELECT g.name, g.is_group,    CASE 
+        WHEN g.closs_id = 1 THEN 'قريب جدا'
+        WHEN g.closs_id = 2 THEN 'صديق مقرب'
+        WHEN g.closs_id = 3 THEN 'زميل عمل'
+        WHEN g.closs_id = 4 THEN 'معارف'
+    END AS type
         FROM guests g
         JOIN closeness c ON g.closs_id = c.id
         ORDER BY c.id, g.is_group, g.name
@@ -233,7 +238,7 @@ def followup_pdf():
     width, height = A4
 
     y = height - 50
-    pdf.setFont("Helvetica-Bold", 16)
+    pdf.setFont("Arabic", 16)
     pdf.drawString(200, y, prepare_ar_text("قائمة المتابعة"))
     y -= 40
 
@@ -243,7 +248,7 @@ def followup_pdf():
         y -= 25
 
         # الأفراد
-        pdf.setFont("Helvetica-Bold", 12)
+        pdf.setFont("Arabic", 12)
         pdf.drawString(70, y, prepare_ar_text("الأفراد"))
         y -= 20
         table_data = [["الاسم", "تمت الدعوة"]]
@@ -260,7 +265,7 @@ def followup_pdf():
             y -= 20 * (len(table_data) + 2)
 
         # المجموعات
-        pdf.setFont("Helvetica-Bold", 12)
+        pdf.setFont("Arabic", 12)
         pdf.drawString(70, y, prepare_ar_text("المجموعات"))
         y -= 20
         table_data = [["الاسم", "تمت الدعوة"]]
