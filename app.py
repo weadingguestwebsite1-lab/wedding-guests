@@ -7,6 +7,8 @@ from reportlab.lib.pagesizes import A4
 from reportlab.pdfgen import canvas
 from reportlab.platypus import Table, TableStyle
 from reportlab.lib import colors
+from reportlab.pdfbase import pdfmetrics
+from reportlab.pdfbase.ttfonts import TTFont
 app = Flask(__name__)
 app.secret_key = "supersecretkey123"
 
@@ -70,6 +72,13 @@ def init_db():
 
 
 init_db()
+# تسجيل خط عربي
+pdfmetrics.registerFont(TTFont("Arabic", "static/fonts/ar.ttf"))
+
+# دالة لتجهيز النص العربي
+def prepare_ar_text(text):
+    reshaped = arabic_reshaper.reshape(text)
+    return get_display(reshaped)
 
 
 # -------------------- Routes --------------------
@@ -222,17 +231,17 @@ def followup_pdf():
 
     y = height - 50
     pdf.setFont("Helvetica-Bold", 16)
-    pdf.drawString(200, y, "قائمة المتابعة")
+    pdf.drawString(200, y, prepare_ar_text("قائمة المتابعة"))
     y -= 40
 
     for closeness, data in grouped.items():
-        pdf.setFont("Helvetica-Bold", 14)
-        pdf.drawString(50, y, closeness)
+        pdf.setFont("Arabic", 16)
+        pdf.drawString(50, y, prepare_ar_text(closeness)
         y -= 25
 
         # الأفراد
         pdf.setFont("Helvetica-Bold", 12)
-        pdf.drawString(70, y, "الأفراد")
+        pdf.drawString(70, y, prepare_ar_text("الأفراد"))
         y -= 20
         table_data = [["الاسم", "تمت الدعوة"]]
         for name in data["individuals"]:
@@ -249,7 +258,7 @@ def followup_pdf():
 
         # المجموعات
         pdf.setFont("Helvetica-Bold", 12)
-        pdf.drawString(70, y, "المجموعات")
+        pdf.drawString(70, y, prepare_ar_text("المجموعات"))
         y -= 20
         table_data = [["الاسم", "تمت الدعوة"]]
         for name in data["groups"]:
