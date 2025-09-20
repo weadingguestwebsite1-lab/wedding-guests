@@ -166,7 +166,6 @@ def download_db():
     g.is_group,
     g.group_size,
     c.phrase,
-    g.closs_id,
     CASE 
         WHEN g.closs_id = 1 THEN 'قريب جدا'
         WHEN g.closs_id = 2 THEN 'صديق مقرب'
@@ -183,7 +182,7 @@ ORDER BY g.name NULLS LAST;
 
     output = io.StringIO()
     writer = csv.writer(output)
-    writer.writerow(["ID (hash)", "Name", "Is Group", "Group Size", "Closeness","closs"])
+    writer.writerow(["ID (hash)", "Name", "Is Group", "Group Size", "pahrse","type"])
     writer.writerows(rows)
 
     response = Response(output.getvalue(), mimetype="text/csv")
