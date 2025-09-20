@@ -236,7 +236,7 @@ def followup_pdf():
 
     for closeness, data in grouped.items():
         pdf.setFont("Arabic", 16)
-        pdf.drawString(50, y, prepare_ar_text(closeness)
+        pdf.drawString(50, y, prepare_ar_text(closeness))
         y -= 25
 
         # الأفراد
